@@ -1,5 +1,4 @@
 import csv
-import soulCrawler
 import sys
 from os import path
 
@@ -18,7 +17,8 @@ def writeToCsv(article: list, disease_name: str):
         return False
     with open(f'{disease_name}.csv', 'a', newline="", encoding='utf-8') as f:
         writer = csv.writer(f)
-        article[1] = article[1].replace(",", "").replace("(", "").replace(")", "").replace("\n", " ")
+        # article[1] = article[1].replace(",", "").replace("(", "").replace(")", "").replace("\n", " ")
+        article[1] = article[1].replace("\n", " ")
         writer.writerow(article)
         f.close()
     print('write complete')
@@ -37,7 +37,7 @@ def writeHeader(disease_name):
     if path.isfile(disease_name):
         # file & header info is already there.
         return False
-    header = ['Link location', 'Article Data']
+    header = ['Link location', 'Article Data', 'Normalized Article', 'BoW\'d Article']
     with open(disease_name, 'w', newline="", encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(header)
