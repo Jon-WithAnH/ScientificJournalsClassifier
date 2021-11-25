@@ -44,7 +44,11 @@ def normalizeList(arg: list) -> bool:
     return True
 
 
-def countWords(arg: list) -> list:
+def countWords(arg: str) -> Counter:
+    return Counter(arg.split())
+
+
+def countListOfWords(arg: list) -> list:
     """
     :param arg: list of strings
     :return: Counter object of number occurrences of each word
@@ -60,6 +64,6 @@ def countWords(arg: list) -> list:
 if __name__ == '__main__':
     test = csvWriter.readArticleData("acute rheumatic arthritis")
     normalizeList(test)
-    countWords(test)
+    # countListOfWords(test)
+    print(countWords("im gonna spend all day applying for jobs"))
     # print(test)
-

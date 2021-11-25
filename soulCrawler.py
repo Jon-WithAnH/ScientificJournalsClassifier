@@ -1,10 +1,9 @@
-import os.path
-import sys
+from sys import stderr
 import requests
-import lxml
 from bs4 import BeautifulSoup
 from bs4 import Tag as bs4Tag
 import csvWriter
+import Normalizing
 
 
 class Crawler:
@@ -37,6 +36,11 @@ class Crawler:
             raise AttributeError(f"search term yielded zero results")
 
     def getNextArticle(self):
+        """
+        :return: web address of next article
+        >>>self.getNextArticle()
+        /2064151/
+        """
         # works from the bottom of the webpage up
         if len(self.articles) == 0:
             self.currentPage += 1
@@ -48,26 +52,24 @@ class Crawler:
         return self.articles.pop()['href']
 
     def beginSearchForArticleSource(self) -> str or None:
-        """:return a valid link to whereever the webpage is located. or a list of a links"""
+        """:return a valid link to where ever the webpage is located. or a list of a links"""
         # time.sleep(2) # pause for a little bit to not overload them
         articleID = self.getNextArticle()
         url = f"https://pubmed.ncbi.nlm.nih.gov{articleID}"
         f = requests.get(url, headers=self.headers)
         soup = BeautifulSoup(f.content, 'lxml')
-        # tmp = soup.find_all("div", {"class": "full-text-links-list"})
+
         tmp = soup.find_all("a", {"class": "link-item pmc dialog-focus"})
-        # print(tmp)
-        # exit(-1)
         if not tmp:
             # might be a link with two dialog options which changes the class
             tmp = soup.find_all("a", {"class": "link-item pmc"})
             if not tmp:
-                print(f"unable to find link to full text in url: {url}", file=sys.stderr, flush=True)
+                print(f"unable to find link to full text in url: {url}", file=stderr, flush=True)
             else:
                 return tmp.pop()['href']
         else:
             return tmp.pop()['href']
-            # return None
+
         # nothing found
         return
 
@@ -84,41 +86,33 @@ class Crawler:
         soup = BeautifulSoup(f.content, 'lxml')
         tmp = soup.find_all("div", {"class": "jig-ncbiinpagenav"})
         if not tmp:
-            print(f"Unable to find full text for url: {url}", file=sys.stderr)
+            print(f"Unable to find full text for url: {url}", file=stderr)
             return
         cleanText = []
         for child in tmp.pop():  # removes tags within the text clipping
             if isinstance(child, bs4Tag):
                 cleanText.append(child.text)
-        # print("Text found")
-        # csvWriter.writeHeader(self.search_term)  # header info is only written once
-        # csvWriter.writeToCsv([url, " ".join(cleanText[3:-3])], self.search_term)
-        self.updateCsvFile(url,cleanText[3:-3])
-        return " ".join(cleanText[3:-3])
+        cleanText = " ".join(cleanText[3:-3])
 
-    def updateCsvFile(self, url, text):
+        self.updateCsvFile(url, cleanText)
+        return cleanText
+
+    def updateCsvFile(self, url, text) -> bool:
+        """
+
+        :param url: url to be written
+        :param text: text to be written. Also gets the normalized version written
+        :return: True on success
+        """
+        normalizedText = Normalizing.normalize(text)
+        countedWords = Normalizing.countWords(normalizedText)
+
         csvWriter.writeHeader(self.search_term)  # header info is only written once
-        csvWriter.writeToCsv([url, " ".join(text)], self.search_term)
+        csvWriter.writeToCsv([url, text, normalizedText, countedWords], self.search_term)
+        return True
+
 
 if __name__ == '__main__':
-    # url = "https://pubmed.ncbi.nlm.nih.gov/?term=acute+rheumatic+arthritis&filter=simsearch2.ffrft&filter=lang.english&filter=years.1964-2021"
-    # https://pubmed.ncbi.nlm.nih.gov/?term=acute+rheumatic+arthritis&filter=lang.english&filter=years.1964-2021
- #https://pubmed.ncbi.nlm.nih.gov/?term=acute+rheumatic+arthritis&filter=simsearch2.ffrft&filter=lang.english&filter=years.1964-2021
-    # bypassing potential webpage restriction by simulating information
-    # headers = {
-    #     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE'
-    # }
-    # f = requests.get(url, headers=headers)
-    # soup = BeautifulSoup(f.content, 'lxml')
-    # articles = soup.find('a', {'class': 'full-docsum'}).find_all('data-permalink-url="https://pubmed.ncbi.nlm.nih.gov/')
-    # articles = soup.find('a', {'class': 'full-docsum'})
-    # articles = soup.find('div', {'class': 'full-docsum'}).find_all('a')
-    # articles = soup.find("article", {"class": "docsum-content"})
-    # print('Movie:' + articles.string.strip())
-    # articles = soup.find_all("a", {"class": "docsum-title"})
-    # articles = soup.find_all("div", {"class": "docsum-title"})
-    # print(articles.pop())
-    # print(articles.pop()['data-ga-label'])
     test = Crawler("acute rheumatic arthritis", "1990-2021")
     # test = Crawler("diease, lyme", "1949-1980")
     for i in range(10):
