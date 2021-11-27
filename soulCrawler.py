@@ -8,55 +8,75 @@ import Normalizing
 
 class Crawler:
 
-    def __init__(self, search_term: str, year_time_frame: str):
+    def __init__(self, search_term: str, year_time_frame: str, demo=False):
         """
         :param search_term: desired search query
         :param year_time_frame: time frame in years. eg 1990-2000
+        :param demo: prevents appending to existing csv files
         """
         self.search_term = search_term
-        self.currentPage = 1
-        self.articles = []
-        self.url = f"https://pubmed.ncbi.nlm.nih.gov/?term={search_term.replace(' ', '+')}" \
+        self.time_frame = year_time_frame
+
+        self._demo = demo
+        self._currentPage = 1
+        self._articles = []
+        self._url = f"https://pubmed.ncbi.nlm.nih.gov/?term={search_term.replace(' ', '+')}" \
                    f"&filter=simsearch2.ffrft&filter=lang.english&filter=years.{year_time_frame}"
-        # self.headers = {
-        #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:77.0) Gecko/20100101 Firefox/77.0'
-        # }
-        self.headers = {
+        self._headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:77.0) Gecko/20100101 Firefox/77.0',
             'Connection': 'close'
         }
         # print(url)
-        self.queryPage(self.url)
+        self._queryPage(self._url)
 
-    def queryPage(self, url):
-        f = requests.get(url, headers=self.headers)
+    def beginCrawling(self, n=10):
+        """
+
+        :param n: amount of articles to retrieve
+        :return: amount of articles successfully written
+        """
+        written = 0
+        while written < n:
+            if self._grabText():
+                written += 1
+                print(" #", written, sep='')
+        return written
+
+    def _queryPage(self, url: str) -> bool:
+        """
+        sets self._articles to a list of all the article links on the page
+        :param url: url of search query
+        :return: True on success
+        """
+        f = requests.get(url, headers=self._headers)
         soup = BeautifulSoup(f.content, 'lxml')
-        self.articles = articles = soup.find_all("a", {"class": "docsum-title"})
+        self._articles = articles = soup.find_all("a", {"class": "docsum-title"})
         if not articles:
             raise AttributeError(f"search term yielded zero results")
+        return True
 
-    def getNextArticle(self):
+    def _getNextArticle(self):
         """
-        :return: web address of next article
-        >>>self.getNextArticle()
-        /2064151/
+
+        :return: web ID of next article
         """
         # works from the bottom of the webpage up
-        if len(self.articles) == 0:
-            self.currentPage += 1
-            try: self.queryPage(test.url + f"&page={self.currentPage}")
+        if len(self._articles) == 0:
+            self._currentPage += 1
+            try: self._queryPage(self._url + f"&page={self._currentPage}")
             except AttributeError as e:
                 print("End of results")  # no more results to query
+                # TODO clean up this exit call
                 exit(0)
         # print(self.articles.pop()['href'])
-        return self.articles.pop()['href']
+        return self._articles.pop()['href']
 
-    def beginSearchForArticleSource(self) -> str or None:
+    def _beginSearchForArticleSource(self) -> str or None:
         """:return a valid link to where ever the webpage is located. or a list of a links"""
         # time.sleep(2) # pause for a little bit to not overload them
-        articleID = self.getNextArticle()
+        articleID = self._getNextArticle()
         url = f"https://pubmed.ncbi.nlm.nih.gov{articleID}"
-        f = requests.get(url, headers=self.headers)
+        f = requests.get(url, headers=self._headers)
         soup = BeautifulSoup(f.content, 'lxml')
 
         tmp = soup.find_all("a", {"class": "link-item pmc dialog-focus"})
@@ -73,16 +93,16 @@ class Crawler:
         # nothing found
         return
 
-    def grabText(self) -> str or None:  # hopefully
+    def _grabText(self) -> str or None:  # hopefully
         """
 
         :return: None or article contents
         """
-        url = self.beginSearchForArticleSource()
+        url = self._beginSearchForArticleSource()
         if url is None:
             # above method didn't find anything and has already printed the error. return and try next article
             return
-        f = requests.get(url, headers=self.headers)
+        f = requests.get(url, headers=self._headers)
         soup = BeautifulSoup(f.content, 'lxml')
         tmp = soup.find_all("div", {"class": "jig-ncbiinpagenav"})
         if not tmp:
@@ -94,34 +114,59 @@ class Crawler:
                 cleanText.append(child.text)
         cleanText = " ".join(cleanText[3:-3])
 
-        self.updateCsvFile(url, cleanText)
-        return cleanText
+        self._updateCsvFile(url, cleanText)
+        # return cleanText
+        return True
 
-    def updateCsvFile(self, url, text) -> bool:
+    def _updateCsvFile(self, url, text) -> bool:
         """
 
         :param url: url to be written
         :param text: text to be written. Also gets the normalized version written
         :return: True on success
         """
+        # FIXME writes below link as comment in csv file
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/pmid/31084592/,,,Counter()
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/pmid/26020139/,,,Counter()
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/pmid/14500407/,,,Counter()
+
         normalizedText = Normalizing.normalize(text)
         countedWords = Normalizing.countWords(normalizedText)
-
-        csvWriter.writeHeader(self.search_term)  # header info is only written once
-        csvWriter.writeToCsv([url, text, normalizedText, countedWords], self.search_term)
+        csvWriter.writeHeader(self.search_term, self._demo)  # header info is only written once
+        # csvWriter.writeHeader("false")
+        csvWriter.writeToCsv([url, text, normalizedText, countedWords], self.search_term, self._demo)
+        # csvWriter.writeToCsv([url, text, normalizedText, countedWords], "false")
         return True
 
 
+def randomWordsCsv() -> None:
+    """
+    function to generate irrelivent articles to use for training
+    :return: None
+    """
+    randomWords = ['wobble','rampant','one','strip','jellyfish','material','recess',
+                   'threatening','corn','acoustic','rail','drawer','visit','fireman ','outstanding',]
+    # print(randomWords)
+    # test = Crawler("wartz", "1900-2021")
+    for eachWord in randomWords:
+        test = Crawler(eachWord, "1900-2021")
+        test.beginCrawling(n=1)
+
+
+# set demo to true to enable write to an irrelvant csv file.
+# reads will still come from important files
+
+
 if __name__ == '__main__':
-    test = Crawler("acute rheumatic arthritis", "1990-2021")
-    # test = Crawler("diease, lyme", "1949-1980")
-    for i in range(10):
-        # print(f"{i+1} ", end='')
-        test.grabText()
-        # if not test.articles:
-        #     currentPage += 1
-        #     # ran out of articles to process, query for more
-        #     try: test.queryPage(test.url + f"&page={currentPage}")
-        #     except AttributeError as e:
-        #         print("End of results")  # no more results to query
-        #         exit(0)
+
+    # test = Crawler("diease, lyme", "1949-1980")  # IMPORTANT: only produces 4 results. keep for testing
+    # test = Crawler("disease, lyme", "1949-2021", demo=True)
+    test = Crawler("abnormalities, cardiovascular", "1949-2021")
+    # test = Crawler("acute rheumatic arthritis", "1990-2021")
+    # testtt = Crawler("cancer", "1990-2001", demo=True)
+    test.beginCrawling(n=35)
+    # knee osteoarthritis
+    test = Crawler("knee osteoarthritis", "1949-2021")
+    test.beginCrawling(n=35)
+    # generate csv for false classifcation
+    # randomWordsCsv()
