@@ -1,80 +1,175 @@
 from nltk import NaiveBayesClassifier
 from nltk import FreqDist
 from nltk import classify
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import metrics
+from sklearn.svm import SVC
 import csvWriter
 
 
-class NaiveBayes:
+class Modeling:
 
     def __init__(self, disease_name: str):
         self.disease_name = disease_name
         self._word_features = []
         self._classifier = None
+        self.NaiveBayes()
 
-    def _startTraining(self) -> bool:
-        """
+        tfidf = TfidfVectorizer(max_features=1000)
 
-        :return: True on completion
-        """
-        allArticlesInDiseaseCsv = csvWriter.readArticleData(self.disease_name)
+        allArticlesInDiseaseCsv = csvWriter.readArticleData(self.disease_name)[:10]
+        documents = csvWriter.readArticleData("false")[:10]
+        self.target_train = target_train = []
+        for eachArticle in allArticlesInDiseaseCsv:
+            target_train.append(1)
+        for eachArticle in documents:
+            target_train.append(0)
+        self.texts_train = texts_train = allArticlesInDiseaseCsv + documents
 
-        if len(allArticlesInDiseaseCsv) < 19:
-            # insufficent data to train
-            raise Exception('Not enough data to train naive classifier')
+        texts_test = csvWriter.readArticleData(self.disease_name)[11:] + csvWriter.readArticleData("false")[11:]
+        self.target_test = target_test =[]
+        for eachArticle in csvWriter.readArticleData(self.disease_name)[11:]:
+            target_test.append(1)
+        for eachArticle in csvWriter.readArticleData("false")[11:]:
+            target_test.append(0)
 
-        bigString = " ".join(allArticlesInDiseaseCsv[:10])  # join the lists together
-        all_words = FreqDist(bigString.split(" "))  # split it all by words
-        self._word_features = list(all_words)
+        self.texts_train1 = tfidf.fit_transform(texts_train)
+        self.texts_test1 = tfidf.transform(texts_test)
 
-        documents = allArticlesInDiseaseCsv[10:18]
-        document2 = csvWriter.readArticleData("false")[:10]
+    def NaiveBayes(self):
+        # self._classifier = _classifier = LinearSVC()
+        # model = CalibratedClassifierCV(_classifier)
 
-        posSet = [(self._document_features(d), 'pos') for d in documents]
-        negSet = [(self._document_features(d), 'neg') for d in document2]
-        train_set = posSet + negSet
+        self._classifier = classifier = MultinomialNB()
+        classifier.fit(self.texts_train1, self.target_train)
 
-        self._classifier = classifier = NaiveBayesClassifier.train(train_set)
-        # classifier.show_most_informative_features()
-        return True
+        # predictions = classifier.predict(self.texts_test1)
+        # print("Naive Bayes:")
+        # print('accuracy:', metrics.accuracy_score(self.target_test, predictions))
+        # print("Precision:", metrics.precision_score(self.target_test, predictions))
+        # print("Recall:", metrics.recall_score(self.target_test, predictions))
 
-    def accuracy_tests(self):
-        if self._classifier is None:
-            # raise AttributeError('classifier has not been trained yet. call obj.startTraining first')
-            self._startTraining()
-
-        _classifier = self._classifier
-
-        documents = csvWriter.readArticleData(self.disease_name)[18:]
-        testFeats = [(self._document_features(f), 'pos') for f in documents]
-
-        document2 = csvWriter.readArticleData("false")[10:]
-        moreTestFeats = [(self._document_features(f), 'neg') for f in document2]
-
-        print(f'{self.disease_name} pos accuracy:', classify.util.accuracy(_classifier, testFeats))
-        print(f'{self.disease_name} neg accuracy:', classify.util.accuracy(_classifier, moreTestFeats))
-
-    def _document_features(self, document):
-        document_words = set(document.split(" "))
-        features = {}
-        # for word in document.split(" "):
-        #     print(word)
-        for word in self._word_features:
-            # print(word)
-            features['contains({})'.format(word)] = (word in document_words)
-        return features
-
+    def printMetrics(self):
+        predictions = self._classifier.predict(self.texts_test1)
+        print('accuracy:', metrics.accuracy_score(self.target_test, predictions))
+        print("Precision:", metrics.precision_score(self.target_test, predictions))
+        print("Recall:", metrics.recall_score(self.target_test, predictions))
 
 class SVM:
-    pass
 
+    def __init__(self, disease_name):
+        self.disease_name = disease_name.replace(' ', '')
+        # self._word_features = []
+        self._classifier = None
+        self.fifthTimeHere()
 
-class LogisticRegression:
-    pass
+    def fifthTimeHere(self):
+        # self._classifier = _classifier = LinearSVC()
+        # model = CalibratedClassifierCV(_classifier)
+
+        tfidf = TfidfVectorizer(max_features=1000)  # stop_words='english',)# norm = None)#)
+
+        allArticlesInDiseaseCsv = csvWriter.readArticleData(self.disease_name)[:10]
+        documents = csvWriter.readArticleData("false")[:10]
+        target_train = []
+        for eachArticle in allArticlesInDiseaseCsv:
+            target_train.append(1)
+        for eachArticle in documents:
+            target_train.append(0)
+        texts_train = allArticlesInDiseaseCsv + documents
+
+        texts_test = csvWriter.readArticleData(self.disease_name)[11:] + csvWriter.readArticleData("false")[11:]
+        target_test = []
+        for eachArticle in csvWriter.readArticleData(self.disease_name)[11:]:
+            target_test.append(1)
+        for eachArticle in csvWriter.readArticleData("false")[11:]:
+            target_test.append(0)
+
+        texts_train1 = tfidf.fit_transform(texts_train)
+        texts_test1 = tfidf.transform(texts_test)
+
+        self._classifier = classifier = SVC()
+        classifier.fit(texts_train1, target_train)
+
+        predictions = classifier.predict(texts_test1)
+        print("SVM:")
+        print('accuracy:', metrics.accuracy_score(target_test, predictions))
+        print("Precision:", metrics.precision_score(target_test, predictions))
+        print("Recall:", metrics.recall_score(target_test, predictions))
+
+    '''svm = Pipeline([
+                    ('vect', CountVectorizer()),
+                    ('tfidf', TfidfTransformer()),
+                    ('clf', LinearSVC()),
+                  ])
+    
+    svm.fit(X_train, y_train)
+    
+    y_pred = svm.predict(X_test)
+    
+    print('accuracy %s' % accuracy_score(y_pred, y_test))
+    print(classification_report(y_test, y_pred))'''
+
+class LogisticRegressionClassification:
+    # y needs to be the label
+    # normalized words as columns
+    # each article as a row
+    # number of word occurance as the row value for each word
+    def __init__(self, disease_name):
+        self.disease_name = disease_name.replace(' ', '')
+        self.thirdFunctionsTheCharm()
+        self._classifier = None
+
+    def thirdFunctionsTheCharm(self):
+
+        tfidf = TfidfVectorizer(max_features=1000)  # stop_words='english',)# norm = None)#)
+
+        allArticlesInDiseaseCsv = csvWriter.readArticleData(self.disease_name)[:10]
+        documents = csvWriter.readArticleData("false")[:10]
+        target_train = []
+        for eachArticle in allArticlesInDiseaseCsv:
+            target_train.append(1)
+        for eachArticle in documents:
+            target_train.append(0)
+        texts_train = allArticlesInDiseaseCsv + documents
+
+        texts_test = csvWriter.readArticleData(self.disease_name)[11:] + csvWriter.readArticleData("false")[11:]
+        target_test = []
+        for eachArticle in csvWriter.readArticleData(self.disease_name)[11:]:
+            target_test.append(1)
+        for eachArticle in csvWriter.readArticleData("false")[11:]:
+            target_test.append(0)
+        # print(target_test)
+        texts_train1 = tfidf.fit_transform(texts_train)
+        texts_test1 = tfidf.transform(texts_test)
+
+        self._classifier = classifier = LogisticRegression()
+        classifier.fit(texts_train1, target_train)
+        predictions = classifier.predict(texts_test1)
+        print("Logistic Regression:")
+        print('accuracy:', metrics.accuracy_score(target_test, predictions))
+        print("Precision:", metrics.precision_score(target_test, predictions))
+        print("Recall:", metrics.recall_score(target_test, predictions))
+        # print(tfidf.get_feature_names_out())
+
+    def printRatings(self):
+        # predictions = self._classifier.predict(texts_test1)
+        # print("Logistic Regression:")
+        # print('accuracy:', metrics.accuracy_score(target_test, predictions))
+        # print("Precision:", metrics.precision_score(target_test, predictions))
+        # print("Recall:", metrics.recall_score(target_test, predictions))
+        pass
 
 
 if __name__ == '__main__':
     diseases = ['acute rheumatic arthritis', 'disease, lyme', 'abnormalities, cardiovascular', 'knee osteoarthritis']
-    # test = NaiveBayes("acute rheumatic arthritis")
     for eachDisease in diseases:
-        test = NaiveBayes(eachDisease)
-        test.accuracy_tests()
+        naiveBayes = NaiveBayes(eachDisease)
+        print()
+        test2 = LogisticRegressionClassification(eachDisease)
+        print()
+        svmTesting = SVM(eachDisease)
+        print()
+    # test.accuracy_tests()
