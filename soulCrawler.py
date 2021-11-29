@@ -144,13 +144,13 @@ def randomWordsCsv() -> None:
     function to generate irrelivent articles to use for training
     :return: None
     """
-    randomWords = ['wobble','rampant','one','strip','jellyfish','material','recess',
-                   'threatening','corn','acoustic','rail','drawer','visit','fireman ','outstanding',]
+    randomWords = ['wobble', 'rampant', 'one', 'strip', 'jellyfish', 'material', 'recess',
+                   'threatening', 'corn', 'acoustic', 'rail', 'drawer', 'visit', 'fireman ', 'outstanding']
     # print(randomWords)
     # test = Crawler("wartz", "1900-2021")
     for eachWord in randomWords:
-        test = Crawler(eachWord, "1900-2021")
-        test.beginCrawling(n=1)
+        tmpObj = Crawler(eachWord, "1900-2021")
+        tmpObj.beginCrawling(n=1)
 
 
 # set demo to true to enable write to an irrelvant csv file.
@@ -161,9 +161,9 @@ if __name__ == '__main__':
 
     # test = Crawler("diease, lyme", "1949-1980")  # IMPORTANT: only produces 4 results. keep for testing
     # test = Crawler("disease, lyme", "1949-2021", demo=True)
-    test = Crawler("abnormalities, cardiovascular", "1949-2021")
     # test = Crawler("acute rheumatic arthritis", "1990-2021")
     # testtt = Crawler("cancer", "1990-2001", demo=True)
+    test = Crawler("abnormalities, cardiovascular", "1949-2021")
     test.beginCrawling(n=35)
     # knee osteoarthritis
     test = Crawler("knee osteoarthritis", "1949-2021")
