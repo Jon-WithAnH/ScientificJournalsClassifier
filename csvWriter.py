@@ -1,5 +1,5 @@
 import csv
-import sys
+from sys import stderr
 from os import path
 
 
@@ -15,7 +15,7 @@ def writeToCsv(article: list, disease_name: str, demo=False) -> bool:
 
     if not article:
         # note: this shouldn't ever happen. exists just in case.
-        print(f"No text found to write", file=sys.stderr)
+        print(f"No text found to write", file=stderr)
         return False
     with open(f'{disease_name}.csv', 'a', newline="", encoding='utf-8') as f:
         writer = csv.writer(f)
@@ -49,32 +49,32 @@ def readArticleData(disease_name: str) -> list:
     :param disease_name: the name of the disease
     :return: string of article contents
     """
-    nonnormalizedArticles = []
+    nonnormalizedArticle = []
     disease_name = disease_name.replace(" ", "") +'.csv'
     with open(disease_name, 'r', encoding='utf-8') as f:
         csv_reader = csv.reader(f, delimiter=',')
         next(csv_reader)  # skip over header
         for i, eachRow in enumerate(csv_reader):  # csv_reader uses a generator. cannot be indexed
-            nonnormalizedArticles.append(eachRow[2])
-    if not nonnormalizedArticles:
+            nonnormalizedArticle.append(eachRow[2])
+    if not nonnormalizedArticle:
         raise AttributeError("No data was read")
-    return nonnormalizedArticles
+    return nonnormalizedArticle
 
 def readBoWfromArticleData(disease_name: str) -> list:
     """
     :param disease_name: the name of the disease
     :return: string of article contents
     """
-    nonnormalizedArticles = []
+    BoWArticles = []
     disease_name = disease_name.replace(" ", "") + '.csv'
     with open(disease_name, 'r', encoding='utf-8') as f:
         csv_reader = csv.reader(f, delimiter=',')
         next(csv_reader)  # skip over header
         for i, eachRow in enumerate(csv_reader):  # csv_reader uses a generator. cannot be indexed
-            nonnormalizedArticles.append(eachRow[2])
-    if not nonnormalizedArticles:
+            BoWArticles.append(eachRow[2])
+    if not BoWArticles:
         raise AttributeError("No data was read")
-    return nonnormalizedArticles
+    return BoWArticles
 
 
 def readOneArticle(disease_name: str) -> list:
@@ -93,10 +93,3 @@ def readOneArticle(disease_name: str) -> list:
             #     nonnormalizedArticles.append(eachword)
             # return nonnormalizedArticles
     return []
-
-
-if __name__ == '__main__':
-    # tmp = soulCrawler.Crawler("diease, lyme", "1949-1980")  # yields 4 results, all fail
-    # writeHeader()
-    # writeToCsv(tmp)
-    print(readArticleData("acuterheumaticarthritis"))

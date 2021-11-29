@@ -159,13 +159,17 @@ def demo():
     obj = Crawler('acute rheumatic arthritis', "1949-2021", demo=True)
     obj.beginCrawling(n=10)
 
-# set demo to true to enable write to an irrelvant csv file.
-# reads will still come from important files
+
+def downloadABunchOfArticles(n=100):
+    diseases = ['acute rheumatic arthritis', 'disease, lyme', 'abnormalities, cardiovascular', 'knee osteoarthritis']
+    for eachDisease in diseases:
+        obj = Crawler(eachDisease, "1949-2021")
+        obj.beginCrawling(n=n)
 
 
 if __name__ == '__main__':
-
-    demo()
+    # demo()
+    downloadABunchOfArticles()
     # test = Crawler("diease, lyme", "1949-1980")  # IMPORTANT: only produces 4 results. keep for testing
     # test = Crawler("disease, lyme", "1949-2021", demo=True)
     # test = Crawler("acute rheumatic arthritis", "1990-2021")
