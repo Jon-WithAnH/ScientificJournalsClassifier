@@ -33,6 +33,10 @@ def normalize(arg: str) -> str:
     return " ".join(text)
 
 
+def countWords(arg: str) -> Counter:
+    return Counter(arg.split())
+
+
 def normalizeList(arg: list) -> bool:
     """
 
@@ -43,10 +47,6 @@ def normalizeList(arg: list) -> bool:
         eachArticle = normalize(eachArticle)
         arg[j] = eachArticle
     return True
-
-
-def countWords(arg: str) -> Counter:
-    return Counter(arg.split())
 
 
 def countListOfWords(arg: list) -> list:

@@ -29,7 +29,7 @@ class Crawler:
         # print(url)
         self._queryPage(self._url)
 
-    def beginCrawling(self, n=10):
+    def beginCrawling(self, n=5):
         """
 
         :param n: amount of articles to retrieve
@@ -93,21 +93,21 @@ class Crawler:
         # nothing found
         return
 
-    def _grabText(self) -> str or None:  # hopefully
+    def _grabText(self) -> bool:
         """
 
-        :return: None or article contents
+        :return: True on success
         """
         url = self._beginSearchForArticleSource()
         if url is None:
             # above method didn't find anything and has already printed the error. return and try next article
-            return
+            return False
         f = requests.get(url, headers=self._headers)
         soup = BeautifulSoup(f.content, 'lxml')
         tmp = soup.find_all("div", {"class": "jig-ncbiinpagenav"})
         if not tmp:
             print(f"Unable to find full text for url: {url}", file=stderr)
-            return
+            return False
         cleanText = []
         for child in tmp.pop():  # removes tags within the text clipping
             if isinstance(child, bs4Tag):
@@ -144,14 +144,20 @@ def randomWordsCsv() -> None:
     function to generate irrelivent articles to use for training
     :return: None
     """
-    randomWords = ['wobble','rampant','one','strip','jellyfish','material','recess',
-                   'threatening','corn','acoustic','rail','drawer','visit','fireman ','outstanding',]
+    randomWords = ['wobble', 'rampant', 'one', 'strip', 'jellyfish', 'material', 'recess',
+                   'threatening', 'corn', 'acoustic', 'rail', 'drawer', 'visit', 'fireman ', 'outstanding']
     # print(randomWords)
     # test = Crawler("wartz", "1900-2021")
     for eachWord in randomWords:
-        test = Crawler(eachWord, "1900-2021")
-        test.beginCrawling(n=1)
+        tmpObj = Crawler(eachWord, "1900-2021")
+        tmpObj.beginCrawling(n=1)
 
+
+def demo():
+    diseases = ['acute rheumatic arthritis', 'disease, lyme', 'abnormalities, cardiovascular', 'knee osteoarthritis']
+    # for eachDisease in diseases:
+    obj = Crawler('acute rheumatic arthritis', "1949-2021", demo=True)
+    obj.beginCrawling(n=10)
 
 # set demo to true to enable write to an irrelvant csv file.
 # reads will still come from important files
@@ -159,14 +165,15 @@ def randomWordsCsv() -> None:
 
 if __name__ == '__main__':
 
+    demo()
     # test = Crawler("diease, lyme", "1949-1980")  # IMPORTANT: only produces 4 results. keep for testing
     # test = Crawler("disease, lyme", "1949-2021", demo=True)
-    test = Crawler("abnormalities, cardiovascular", "1949-2021")
     # test = Crawler("acute rheumatic arthritis", "1990-2021")
     # testtt = Crawler("cancer", "1990-2001", demo=True)
-    test.beginCrawling(n=35)
+    # test = Crawler("abnormalities, cardiovascular", "1949-2021")
+    # test.beginCrawling(n=35)
     # knee osteoarthritis
-    test = Crawler("knee osteoarthritis", "1949-2021")
-    test.beginCrawling(n=35)
+    # test = Crawler("knee osteoarthritis", "1949-2021")
+    # test.beginCrawling(n=35)
     # generate csv for false classifcation
     # randomWordsCsv()

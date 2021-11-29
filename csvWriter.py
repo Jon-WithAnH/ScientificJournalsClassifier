@@ -50,7 +50,23 @@ def readArticleData(disease_name: str) -> list:
     :return: string of article contents
     """
     nonnormalizedArticles = []
-    disease_name = disease_name.replace(" ", "")+'.csv'
+    disease_name = disease_name.replace(" ", "") +'.csv'
+    with open(disease_name, 'r', encoding='utf-8') as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        next(csv_reader)  # skip over header
+        for i, eachRow in enumerate(csv_reader):  # csv_reader uses a generator. cannot be indexed
+            nonnormalizedArticles.append(eachRow[2])
+    if not nonnormalizedArticles:
+        raise AttributeError("No data was read")
+    return nonnormalizedArticles
+
+def readBoWfromArticleData(disease_name: str) -> list:
+    """
+    :param disease_name: the name of the disease
+    :return: string of article contents
+    """
+    nonnormalizedArticles = []
+    disease_name = disease_name.replace(" ", "") + '.csv'
     with open(disease_name, 'r', encoding='utf-8') as f:
         csv_reader = csv.reader(f, delimiter=',')
         next(csv_reader)  # skip over header
